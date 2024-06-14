@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-style.css') }}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        #map {
+            width: 100%;
+            height: 99vh;
+        }
+        
+        #map-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #map-selector label {
+            margin-bottom: 5px;
+        }
+        #counter{
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+
+        }
+        
+    </style>
+   
+ </head>
+ <body>
+    <div id="wrapper">
+
+        <aside id="sidebar-wrapper">
+          <div class="sidebar-brand">
+            <h2>N.N.D</h2>
+          </div>
+          <ul class="sidebar-nav">
+            <li class="active">
+                <a href="{{ url_for('dashboard') }}"><i class="fa fa-home"></i>View Dashboard</a>
+              </li>
+            <li>
+            <li>
+                <a href="{{ url_for('view_complaints') }}"><i class="fa fa-table"></i>View Complaints</a>
+              </li>
+            <li>
+              <a href="{{ url_for('fetch_complaints') }}"><i class="fa fa-plug"></i>Get NewComplaints</a>
+            </li>
+            <li>
+              <a href="{{ url_for('map') }}"><i class="fa fa-map"></i>View Map</a>
+            </li>
+          </ul>
+        </aside>
+      
+        <div id="navbar-wrapper">
+          <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+              <div class="navbar-header">
+                <a href="#" class="navbar-brand" id="sidebar-toggle"><i class="fa fa-bars"></i></a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      
+        <section id="content-wrapper">
+            <div class="row">
+              <div class="col-lg-12">
+                <h1 class="mt-2">Complaints Visualization Map</h1>
+                <div id="map"></div>
+    
+        <!-- Map Layer Selector -->
+        <div id="map-selector">
+            <label for="osm"><input type="radio" id="osm" name="map-layer" checked> OpenStreetMap</label>
+            <label for="esri"><input type="radio" id="esri" name="map-layer"> ESRI World Street Map</label>
+        </div>
+        <div id="counter">
+            Number of Complaints: <span id="count">0</span>
+        </div>
+
+        <!-- Leaflet JavaScript -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <!-- Leaflet Heat Plugin -->
+        <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+        <script>
+            // Initialize map
+            var map = L.map('map').setView([30.3393, 78.0465], 15);
+
+            // Define layers
+            var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+            
+            var esri_worldstreetmap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+            });
+
+            // Add OpenStreetMap by default
+            osm.addTo(map);
+
+            // Counter initialization
+            var counterElement = document.getElementById('count');
+            var count = 0;
+
+            // Event listeners for radio buttons
+            document.getElementById('osm').addEventListener('change', function() {
+                if (this.checked) {
+                    map.removeLayer(esri_worldstreetmap);
+                    osm.addTo(map);
+                }
+            });
+
+            document.getElementById('esri').addEventListener('change', function() {
+                if (this.checked) {
+                    map.removeLayer(osm);
+                    esri_worldstreetmap.addTo(map);
+                }
+            });
+
+            // Load the GeoJSON data for Dehradun wards
+            // {{ url_for('static', filename='data/wards.geojson') }}
+            fetch('{{ url_for("static", filename="data/wards.geojson") }}')
+                .then(response => response.json())
+                .then(polygonJson => {
+                    var polygonData = L.geoJSON(polygonJson, {
+                        onEachFeature: function (feature, layer) {
+                            layer.bindPopup(`<b>WARD NAME:</b> ${feature.properties.WARD_NAME}<br>
+                                            <b>WARD NUMBER:</b> ${feature.properties.WARD_NO_}<br>
+                                            <b>POPULATION:</b> ${feature.properties.POPULATION}`);
+                        },
+                        style: function (feature) {
+                            return {
+                                fillColor: 'transparent',
+                                fillOpacity: 0,
+                                color: '#000000',
+                                weight: 2
+                            };
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => {
+                    console.error('Error loading the GeoJSON data:', error);
+                });
+
+            // Load point GeoJSON data for Pot Holes and Hazardous Electric Power Lines
+            fetch('{{ url_for("static", filename="data/Pot_Hole__Hazardous_Electric_power_lines_reporting_final.geojson") }}')
+                .then(response => response.json())
+                .then(pointJson => {
+                    // Update counter
+                    count = pointJson.features.length;
+                    counterElement.textContent = count;
+
+                    // Extract point data for the heat map
+                    var heatData = pointJson.features.map(function (feature) {
+                        var coords = feature.geometry.coordinates;
+                        return [coords[1], coords[0], 1]; // Latitude, Longitude, Intensity
+                    });
+
+                    // Create heat map layer
+                    var heat = L.heatLayer(heatData, {
+                        radius: 25,      // Radius of each "point" of the heatmap
+                        blur: 15,        // Amount of blur
+                        maxZoom: 17      // Maximum zoom level at which the points reach maximum intensity
+                    }).addTo(map);
+
+                    // Add points as markers with popups
+                    L.geoJSON(pointJson, {
+                        pointToLayer: function (feature, latlng) {
+                            return L.marker(latlng);
+                        },
+                        onEachFeature: function (feature, layer) {
+                            var popupContent = `
+                                <b>Name:</b> ${feature.properties["Name "] || "N/A"}<br>
+                                <b>Phone Number:</b> ${feature.properties["Phone Number "] || "N/A"}<br>
+                                <b>Mail Id:</b> ${feature.properties["Mail Id "] || "N/A"}<br>
+                                <b>Date:</b> ${feature.properties["Date "] || "N/A"}<br>
+                                <b>Type of hazard:</b> ${feature.properties["Type of hazard "] || "N/A"}<br>
+                                <b>Photo:</b> <a href="${feature.properties["Photo_URL"]}" target="_blank">View Photo</a>
+                            `;
+                            layer.bindPopup(popupContent);
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => {
+                    console.error('Error loading the point GeoJSON data:', error);
+                });
+        </script>
+              </div>
+            </div>
+        </section>
+      
+      </div>
+      <script>
+        const $button  = document.querySelector('#sidebar-toggle');
+        const $wrapper = document.querySelector('#wrapper');
+
+        $button.addEventListener('click', (e) => {
+        e.preventDefault();
+        $wrapper.classList.toggle('toggled');
+        });
+      </script>
+ 
+ </body>
+ 
+ </html>

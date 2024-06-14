@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nagar Nigam Dehradun Complaint Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="container">
+        <div class="content">
+            <div class="citizens-section">
+                <div class="section-header">Citizens Section</div>
+                <div class="buttons">
+                    <a href="https://ee.kobotoolbox.org/x/wbOHvkfZ" target="_blank" class="btn register"><i class="fas fa-ticket-alt"></i> Register Complaint</a>
+                    <a href="{{ url_for('check_status') }}" class="btn status"><i class="fas fa-search"></i> Check Status</a>
+                </div>
+            </div>
+            <div class="info-section">
+                <h2>Nagar Nigam Dehradun</h2>
+                <p style="text-align: justify; text-justify: inter-word;">Dehradun is a State Capital as well as the District Headquarter and is the only corporation city in the state. The urbanization level in the state is highest in the vicinity, with 3 other major urban centres, Mussoorie, Hardwar and Rishikesh located within 30-50 Km range. The other key agencies in the city and sub-region which are responsible for urban planning and urban management functions include Dehradun Mussoorie Development Authority, Hardwar Rishikesh Development Authority, Doon Valley Special Area Development Authority and Garhwal Jal Sansthan.</p>
+                <p style="text-align: justify; text-justify: inter-word;">Citizens can use the designated section to register new complaints and track the status of their complaints by providing their phone numbers.</p>
+                <div class="contact-info">    
+                    <div class="contact-address">
+                        <h3>Contact Address</h3>
+                        <p>Near Doon Hospital, New road, Race Course</p>
+                        <p>Dehradun, Uttarakhand-248001</p>
+                    </div>
+                    <div class="contact-numbers">
+                        <h3>Contact Details</h3>
+                        <p>Phone: +91-135-2653572</p>
+                        <p>Email: nagarnigam.ddn@gmail.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
